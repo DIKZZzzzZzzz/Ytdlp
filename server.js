@@ -1,17 +1,26 @@
 import express from 'express';
 import cors from 'cors';
-import { exec, execSync } from 'child_process';
+import { exec } from 'child_process';
 import fs from 'fs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Auto-download yt-dlp jika belum ada
-if (!fs.existsSync('./yt-dlp')) {
-  console.log('⬇️ Mengunduh yt-dlp...');
-  execSync('curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp && chmod +x yt-dlp');
-  console.log('✅ yt-dlp berhasil diunduh');
+// Download yt-dlp async saat server jalan
+function ensureYtDlp() {
+  if (!fs.existsSync('./yt-dlp')) {
+    console.log('⬇️ Mengunduh yt-dlp...');
+    exec(
+      'curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp && chmod +x yt-dlp',
+      (err, stdout, stderr) => {
+        if (err) console.error('❌ Gagal unduh yt-dlp:', stderr);
+        else console.log('✅ yt-dlp siap digunakan');
+      }
+    );
+  }
 }
+
+ensureYtDlp();
 
 app.use(cors());
 app.use(express.static('public'));
