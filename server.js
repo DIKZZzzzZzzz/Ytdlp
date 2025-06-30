@@ -1,9 +1,17 @@
 import express from 'express';
 import cors from 'cors';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
+import fs from 'fs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Auto-download yt-dlp jika belum ada
+if (!fs.existsSync('./yt-dlp')) {
+  console.log('⬇️ Mengunduh yt-dlp...');
+  execSync('curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp && chmod +x yt-dlp');
+  console.log('✅ yt-dlp berhasil diunduh');
+}
 
 app.use(cors());
 app.use(express.static('public'));
@@ -12,11 +20,11 @@ app.get('/api/ytdl', (req, res) => {
   const videoUrl = req.query.url;
   if (!videoUrl) return res.status(400).json({ status: false, message: 'URL kosong!' });
 
-  const cmd = `yt-dlp -j --no-playlist "${videoUrl}"`;
+  const cmd = `./yt-dlp -j --no-playlist "${videoUrl}"`;
 
   exec(cmd, (err, stdout, stderr) => {
     if (err) {
-      return res.status(500).json({ status: false, message: 'Gagal ambil info video.' });
+      return res.status(500).json({ status: false, message: 'Gagal ambil info video.', error: stderr });
     }
 
     try {
@@ -44,4 +52,4 @@ app.get('/api/ytdl', (req, res) => {
   });
 });
 
-app.listen(PORT, () => console.log(`Server jalan di port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server jalan di port ${PORT}`));
